@@ -1,0 +1,49 @@
+# @titanium/module-copier
+
+> Copies dependencies defined in package.json to Titanium Resources directory
+
+- [📝 Description](#-description)
+- [🚀 Getting Started](#-getting-started)
+- [🔗 Related Links](#-related-links)
+- [📚 Learn More](#-learn-more)
+- [📣 Feedback](#-feedback)
+- [©️ Legal](#️-legal)
+
+## 📝 Description
+
+Currently, if you want to be able to use npm to install packages for Titanium, you need to do it from `/app/lib`, `/app/vendor`, or `/app/assets`.
+
+What this module does is it gives the you (the developer) the ability to install Node.js modules for Titanium in the same place you are installing Node.js modules for everything else. 
+
+
+## 🚀 Getting Started
+
+> This module is meant to be used as part of the Titanium mobile build process.   
+ 
+There are several ways this module can be used by Titanium:
+
+- You can follow this JIRA ticket about this feature getting integrated into Titanium SDK
+- You can use this a part of a Titanium Plugin
+
+
+## 🔗 Related Links
+
+- [Titanium Mobile](https://www.npmjs.com/package/titanium) - Open-source tool for building powerful, cross-platform native apps with JavaScript.
+- [Alloy](https://www.npmjs.com/package/alloy) - MVC framework built on top of Titanium Mobile.
+- [Appcelerator](https://www.npmjs.com/package/appcelerator) - Installer for the Appcelerator Platform tool
+
+## 📚 Learn More
+
+- [Axway Developer Portal](https://developer.axway.com)
+
+## 📣 Feedback
+
+Have an idea or a comment?  [Join in the conversation here](https://github.com/brentonhouse/titanium-module-copier/issues)! 
+
+## ©️ Legal
+
+Alloy is developed by Appcelerator and the community and is Copyright © 2012-Present by Appcelerator, Inc. All Rights Reserved.
+
+Alloy is made available under the Apache Public License, version 2. See their license file for more information.
+
+Appcelerator is a registered trademark of Appcelerator, Inc. Titanium is a registered trademark of Appcelerator, Inc. Please see the LEGAL information about using trademarks, privacy policy, terms of usage and other legal information at http://www.appcelerator.com/legal.

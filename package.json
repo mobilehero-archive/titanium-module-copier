@@ -1,0 +1,32 @@
+{
+  "name": "@titanium/module-copier",
+  "version": "0.0.1",
+  "description": "Copies dependencies defined in package.json to Titanium Resources directory",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "titanium",
+    "modules",
+    "node",
+    "alloy",
+    "mobile",
+    "appcelerator",
+    "axway",
+    "amplify"
+  ],
+  "author": {
+    "name": "Brenton House",
+    "email": "brenton.house@gmail.com",
+    "url": "https://brenton.house"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github:brentonhouse/titanium-module-copier"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@geek/eslint-config": "0.0.1"
+  }
+}
