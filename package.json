@@ -1,32 +1,41 @@
 {
-  "name": "@titanium/module-copier",
-  "version": "0.0.1",
-  "description": "Copies dependencies defined in package.json to Titanium Resources directory",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "titanium",
-    "modules",
-    "node",
-    "alloy",
-    "mobile",
-    "appcelerator",
-    "axway",
-    "amplify"
-  ],
-  "author": {
-    "name": "Brenton House",
-    "email": "brenton.house@gmail.com",
-    "url": "https://brenton.house"
-  },
-  "repository": {
-    "type": "git",
-    "url": "github:brentonhouse/titanium-module-copier"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@geek/eslint-config": "0.0.1"
-  }
+	"name": "@titanium/module-copier",
+	"version": "0.0.2",
+	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"titanium",
+		"modules",
+		"node",
+		"alloy",
+		"mobile",
+		"appcelerator",
+		"axway",
+		"amplify"
+	],
+	"author": {
+		"name": "Brenton House",
+		"email": "brenton.house@gmail.com",
+		"url": "https://brenton.house"
+	},
+	"repository": {
+		"type": "git",
+		"url": "github:brentonhouse/titanium-module-copier"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"@geek/eslint-config": "0.0.1",
+		"eslint": "^5.13.0",
+		"eslint-plugin-import": "^2.16.0",
+		"eslint-plugin-jsdoc": "^4.1.0",
+		"eslint-plugin-promise": "^4.0.1"
+	},
+	"dependencies": {
+		"colors": "^1.3.3",
+		"fs-extra": "^7.0.1",
+		"lodash": "^4.17.11"
+	}
 }
