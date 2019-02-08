@@ -1,6 +1,6 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {
@@ -39,6 +39,6 @@
 		"lodash": "^4.17.11"
 	},
 	"bin": {
-		"copy-modules": "./bin/copyModules"
+		"copymodules": "./bin/copyModules"
 	}
 }
