@@ -1,5 +1,7 @@
 # @titanium/module-copier
 
+![https://www.npmjs.com/package/@titanium/module-copier](https://img.shields.io/npm/v/@titanium/module-copier.png)
+
 > Copies dependencies defined in package.json to Titanium Resources directory
 
 - [📝 Description](#-description)
