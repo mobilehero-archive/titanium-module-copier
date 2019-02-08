@@ -22,8 +22,9 @@ What this module does is it gives the you (the developer) the ability to install
  
 There are several ways this module can be used by Titanium:
 
-- You can follow this JIRA ticket about this feature getting integrated into Titanium SDK
+- You can [follow this JIRA ticket](https://jira.appcelerator.org/browse/TIMOB-26352) about this feature getting integrated into Titanium SDK
 - You can use this a part of a Titanium Plugin
+- You can execute this as command-line tool:  `copy-modules <projectPath> <targetPath>`
 
 
 ## 🔗 Related Links
