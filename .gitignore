@@ -9,8 +9,6 @@ tmp
 *.suo
 *.user
 *.tmp
-bin
-Bin
 obj
 dirtyflag.txt
 .settings/
