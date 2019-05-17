@@ -36,7 +36,7 @@
 	"dependencies": {
 		"colors": "^1.3.3",
 		"fs-extra": "^7.0.1",
-		"lodash": "^4.17.11"
+		"lodash.get": "^4.4.2"
 	},
 	"bin": {
 		"copymodules": "./bin/cli.js"
