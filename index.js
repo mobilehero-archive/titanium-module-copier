@@ -1,9 +1,9 @@
 const copier = {};
 module.exports = copier;
 
-require('colors');
 const fs = require('fs-extra');
 const path = require('path');
+
 const NODE_MODULES = 'node_modules';
 
 /**
@@ -25,99 +25,88 @@ copier.execute = async (projectPath, targetPath, options = { includeOptional: tr
 	projectPath = path.resolve(projectPath);
 	targetPath = path.resolve(targetPath);
 
-	let packageJson;
-	try {
-		packageJson = await fs.readJson(path.join(projectPath, 'package.json'));
-	} catch (err) {
-		console.error(err);
-		throw new Error(`Cannot load package.json file: ${path.join(projectPath, 'package.json')}`);
-	}
+	// recursively gather the full set of dependencies/directories we need to copy
+	const root = new Dependency(null, 'fake-id', projectPath);
+	const directoriesToBeCopied = await root.getDirectoriesToCopy(options.includeOptional);
 
-	const dependencies = packageJson && packageJson.dependencies;
-	const directoriesToBeCopied = gatherDirectoriesToCopy(projectPath, Object.keys(dependencies), options);
-	console.debug(`directoriesToBeCopied: ${JSON.stringify(directoriesToBeCopied, null, 2)}`.blue);
+	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
+	// back to Array so we can #map()
+	const deDuplicated = Array.from(dirSet);
 
-	return Promise.all(directoriesToBeCopied.map(async directory => {
-		const destPath = path.join(targetPath, directory.substring(projectPath.length));
-		console.debug(`copying to directory: ${destPath}`);
-		return fs.copy(directory, destPath, { overwrite: true });
+	// Then copy them over
+	return Promise.all(deDuplicated.map(async directory => {
+		const relativePath = directory.substring(projectPath.length);
+		const destPath = path.join(targetPath, relativePath);
+		return fs.copy(directory, destPath, { overwrite: true }); // TODO: Allow incremental copying! Maybe use gulp/vinyl?
 	}));
 };
 
-// FIXME: Use an actual Set to ensure no duplicates?
-/**
- * Gathers the full listing of directories we need to copy
- * @param {string} projectPath absolute path to source project root directory
- * @param {string[]} dependencies array of module ids to be copied
- * @param {object} [options] options to use when gathering
- * @param {boolean} [options.includeOptional=true] whether to include optional dependencies when gathering
- * @returns {string[]} set of directories to copy
- */
-function gatherDirectoriesToCopy(projectPath, dependencies, options) {
-	const directoriesToBeCopied = [];
-	const directoriesFound = [];
-
-	const pendingItems = dependencies.map(name => ({ name }));
-
-	while (pendingItems.length) {
-		const currentItem = pendingItems.shift();
-		console.debug(`searching for module: ${currentItem.name}`.blue);
-		const dependency = findDependency(currentItem, null, options.includeOptional);
-		if (dependency && !directoriesFound.includes(dependency.directory)) {
-			directoriesFound.push(dependency.directory);
-			if (dependency.isRoot && !directoriesToBeCopied.includes(dependency.directory)) {
-				directoriesToBeCopied.push(dependency.directory);
-				console.debug(`    adding dependency: ${dependency.name}`);
-			}
-			dependency.dependencies.forEach(subDependency => {
-				pendingItems.push({
-					name:   subDependency,
-					parent: {
-						name:      dependency.name,
-						directory: dependency.directory,
-					},
-				});
-			});
-		}
+class Dependency {
+	constructor(parent, name, directory) {
+		this.name = name;
+		this.parent = parent;
+		this.directory = directory;
 	}
-	return directoriesToBeCopied;
 
 	/**
-	 * @param {object} metadata module metadata
-	 * @param {string} [name] module name
-	 * @param {object} [metadata.parent] metadata about the parent module
-	 * @param {string} [metadata.parent.name] parent module name
-	 * @param {string} [metadata.parent.directory] parent module directory path
-	 * @param {boolean} [includeOptional=true] whether to include optional dependencies
-	 * @returns {object} module metadata
+	 * @param {boolean} [includeOptional=true] include optional dependencies?
+	 * @returns {Promise<string[]>} full set of directories to copy
 	 */
-	function findDependency(metadata, name, includeOptional = true) {
-		if (metadata === null || metadata === undefined) {
-			return null;
+	async getDirectoriesToCopy(includeOptional = true) {
+		const childrenNames = await this.gatherChildren(includeOptional);
+		if (childrenNames.length === 0) {
+			return [ this.directory ]; // just need our own directory!
 		}
-		name = name || metadata.name;
-		const parentDir = (metadata.parent && metadata.parent.directory) || projectPath;
-		const directory = path.join(parentDir, NODE_MODULES, name);
-		console.debug(`    looking in dir: ${directory}`);
-		let dependencyPackageJson;
-		try {
-			dependencyPackageJson = fs.readJsonSync(path.join(directory, 'package.json'));
-		} catch (err) {
-			console.debug(`     error: ${directory}`.red);
-			return findDependency(metadata.parent, name, includeOptional);
+
+		const children = await Promise.all(childrenNames.map(name => this.resolve(name)));
+		const allDirs = await Promise.all(children.map(c => c.getDirectoriesToCopy(includeOptional)));
+		// flatten allDirs doen to single Array
+		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
+
+		// if this isn't the "root" module...
+		if (this.parent !== null) {
+			// ...prune any children directories that are underneath this one
+			const filtered = flattened.filter(dir => !dir.startsWith(this.directory));
+			filtered.push(this.directory); // We need to include our own directory
+			return filtered;
 		}
-		console.debug('    found module!'.green);
-		const dependencies = Object.keys(dependencyPackageJson.dependencies || {});
+		return flattened;
+	}
+
+	/**
+	 * @param {boolean} [includeOptional] include optional dependencies?
+	 * @returns {Promise<string[]>} set of dependency names
+	 */
+	async gatherChildren(includeOptional = true) {
+		const packageJson = await fs.readJson(path.join(this.directory, 'package.json'));
+		const dependencies = Object.keys(packageJson.dependencies || {});
 		// include optional dependencies too?
-		if (includeOptional && dependencyPackageJson.optionalDependencies) {
-			dependencies.push(...Object.keys(dependencyPackageJson.optionalDependencies));
+		if (includeOptional && packageJson.optionalDependencies) {
+			dependencies.push(...Object.keys(packageJson.optionalDependencies));
 		}
-		return {
-			name,
-			directory,
-			dependencies,
-			isRoot: projectPath === parentDir,
-		};
+		return dependencies;
+	}
+
+	/**
+	 * Attempts to resolve a given module by id to the correct
+	 * @param {string} subModule id of a module that is it's dependency
+	 * @returns {Promise<Dependency>} the resolved dependency
+	 */
+	async resolve(subModule) {
+		try {
+			// First try underneath the current module
+			const targetDir = path.join(this.directory, NODE_MODULES, subModule);
+			const packageJsonExists = await fs.pathExists(path.join(targetDir, 'package.json'));
+			if (packageJsonExists) {
+				return new Dependency(this, subModule, targetDir);
+			}
+		} catch (err) {
+			// this is the root and we still didn't find it, fail!
+			if (this.parent === null) {
+				throw err;
+			}
+		}
+
+		return this.parent.resolve(subModule); // Try the parent (recursively)
 	}
 }
-
