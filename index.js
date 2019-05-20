@@ -66,7 +66,7 @@ class Dependency {
 		// if this isn't the "root" module...
 		if (this.parent !== null) {
 			// ...prune any children directories that are underneath this one
-			const filtered = flattened.filter(dir => !dir.startsWith(this.directory));
+			const filtered = flattened.filter(dir => !dir.startsWith(this.directory + path.sep));
 			filtered.push(this.directory); // We need to include our own directory
 			return filtered;
 		}
