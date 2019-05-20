@@ -1,7 +1,6 @@
 const copier = {};
 module.exports = copier;
 
-const get = require('lodash.get');
 require('colors');
 const fs = require('fs-extra');
 const path = require('path');
@@ -10,13 +9,15 @@ const NODE_MODULES = 'node_modules';
 /**
  * @param {string} projectPath absolute filepath for project root directory
  * @param {string} targetPath absolute filepath for target directory to copy node_modules into
- * @returns {Promise<void>}
+ * @param {object} [options] options object
+ * @param {boolean} [options.includeOptional=true] whether to include optional dependencies when gathering
+ * @returns {Promise<void>} A Promise that resolves on completion
  */
-copier.execute = async (projectPath, targetPath) => {
-	if (projectPath === null) {
+copier.execute = async (projectPath, targetPath, options = { includeOptional: true }) => {
+	if (projectPath === null || projectPath === undefined) {
 		throw new Error('projectPath must be defined.');
 	}
-	if (targetPath === null) {
+	if (targetPath === null || targetPath === undefined) {
 		throw new Error('targetPath must be defined.');
 	}
 
@@ -33,7 +34,7 @@ copier.execute = async (projectPath, targetPath) => {
 	}
 
 	const dependencies = packageJson && packageJson.dependencies;
-	const directoriesToBeCopied = gatherDirectoriesToCopy(projectPath, Object.keys(dependencies));
+	const directoriesToBeCopied = gatherDirectoriesToCopy(projectPath, Object.keys(dependencies), options);
 	console.debug(`directoriesToBeCopied: ${JSON.stringify(directoriesToBeCopied, null, 2)}`.blue);
 
 	return Promise.all(directoriesToBeCopied.map(async directory => {
@@ -48,9 +49,11 @@ copier.execute = async (projectPath, targetPath) => {
  * Gathers the full listing of directories we need to copy
  * @param {string} projectPath absolute path to source project root directory
  * @param {string[]} dependencies array of module ids to be copied
+ * @param {object} [options] options to use when gathering
+ * @param {boolean} [options.includeOptional=true] whether to include optional dependencies when gathering
  * @returns {string[]} set of directories to copy
  */
-function gatherDirectoriesToCopy(projectPath, dependencies) {
+function gatherDirectoriesToCopy(projectPath, dependencies, options) {
 	const directoriesToBeCopied = [];
 	const directoriesFound = [];
 
@@ -59,7 +62,7 @@ function gatherDirectoriesToCopy(projectPath, dependencies) {
 	while (pendingItems.length) {
 		const currentItem = pendingItems.shift();
 		console.debug(`searching for module: ${currentItem.name}`.blue);
-		const dependency = findDependency(currentItem);
+		const dependency = findDependency(currentItem, null, options.includeOptional);
 		if (dependency && !directoriesFound.includes(dependency.directory)) {
 			directoriesFound.push(dependency.directory);
 			if (dependency.isRoot && !directoriesToBeCopied.includes(dependency.directory)) {
@@ -82,14 +85,18 @@ function gatherDirectoriesToCopy(projectPath, dependencies) {
 	/**
 	 * @param {object} metadata module metadata
 	 * @param {string} [name] module name
+	 * @param {object} [metadata.parent] metadata about the parent module
+	 * @param {string} [metadata.parent.name] parent module name
+	 * @param {string} [metadata.parent.directory] parent module directory path
+	 * @param {boolean} [includeOptional=true] whether to include optional dependencies
 	 * @returns {object} module metadata
 	 */
-	function findDependency(metadata, name) {
-		if (metadata === null) {
+	function findDependency(metadata, name, includeOptional = true) {
+		if (metadata === null || metadata === undefined) {
 			return null;
 		}
 		name = name || metadata.name;
-		const parentDir = get(metadata, 'parent.directory', projectPath);
+		const parentDir = (metadata.parent && metadata.parent.directory) || projectPath;
 		const directory = path.join(parentDir, NODE_MODULES, name);
 		console.debug(`    looking in dir: ${directory}`);
 		let dependencyPackageJson;
@@ -97,12 +104,12 @@ function gatherDirectoriesToCopy(projectPath, dependencies) {
 			dependencyPackageJson = fs.readJsonSync(path.join(directory, 'package.json'));
 		} catch (err) {
 			console.debug(`     error: ${directory}`.red);
-			return findDependency(metadata.parent, name);
+			return findDependency(metadata.parent, name, includeOptional);
 		}
 		console.debug('    found module!'.green);
 		const dependencies = Object.keys(dependencyPackageJson.dependencies || {});
-		// include optional dependencies too
-		if (dependencyPackageJson.optionalDependencies) {
+		// include optional dependencies too?
+		if (includeOptional && dependencyPackageJson.optionalDependencies) {
 			dependencies.push(...Object.keys(dependencyPackageJson.optionalDependencies));
 		}
 		return {
