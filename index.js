@@ -59,7 +59,7 @@ copier.execute = (projectPath, targetPath) => {
 	_.forEach(directoriesToBeCopied, directory => {
 		const destPath = path.join(targetPath, directory.substring(projectPath.length));
 		console.debug(`copying to directory: ${destPath}`);
-		fs.copySync(directory, destPath, { overwrite: true });
+		fs.copySync(directory, destPath, { overwrite: true, dereference: true });
 	});
 
 	function findDependency(metadata, name) {
