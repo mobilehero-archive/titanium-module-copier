@@ -1,21 +1,11 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"keywords": [
-		"titanium",
-		"modules",
-		"node",
-		"alloy",
-		"mobile",
-		"appcelerator",
-		"axway",
-		"amplify"
-	],
 	"author": {
 		"name": "Brenton House",
 		"email": "brenton.house@gmail.com",
@@ -40,5 +30,23 @@
 	},
 	"bin": {
 		"copymodules": "./bin/cli.js"
+	},
+	"keywords": [
+		"titanium",
+		"mobile",
+		"alloy",
+		"eslint",
+		"turbo",
+		"axway",
+		"appcelerator",
+		"ios",
+		"android",
+		"iphone",
+		"ipad",
+		"modules",
+		"brentonhouse"
+	],
+	"titanium": {
+		"ignore": true
 	}
 }

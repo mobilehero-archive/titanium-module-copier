@@ -59,7 +59,7 @@ copier.execute = (projectPath, targetPath) => {
 	_.forEach(directoriesToBeCopied, directory => {
 		const destPath = path.join(targetPath, directory.substring(projectPath.length));
 		console.debug(`copying to directory: ${destPath}`);
-		fs.copySync(directory, destPath, { overwrite: true, dereference: true });
+		fs.copySync(directory, destPath, { overwrite: true, dereference: true, filter: src => !_.includes(src.split(path.sep), '__modules') });
 	});
 
 	function findDependency(metadata, name) {
@@ -77,6 +77,11 @@ copier.execute = (projectPath, targetPath) => {
 			console.debug(`     error: ${directory}`.red);
 			return findDependency(metadata.parent, name);
 		}
+		if (dependencyPackageJson.titanium && dependencyPackageJson.titanium.ignore) {
+			console.warn('    ignoring module'.red);
+			return;
+		}
+
 		console.debug('    found module!'.green);
 		return {
 			name,
