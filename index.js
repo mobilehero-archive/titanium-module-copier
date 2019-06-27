@@ -7,13 +7,14 @@ const path = require('path');
 const NODE_MODULES = 'node_modules';
 
 /**
- * @param {string} projectPath absolute filepath for project root directory
- * @param {string} targetPath absolute filepath for target directory to copy node_modules into
- * @param {object} [options] options object
- * @param {boolean} [options.includeOptional=true] whether to include optional dependencies when gathering
- * @returns {Promise<void>} A Promise that resolves on completion
+ * @description Copy all dependencies to target directory
+ * @param {string} projectPath - Absolute filepath for project root directory.
+ * @param {string} targetPath - Absolute filepath for target directory to copy node_modules into.
+ * @param {object} [options] - Options object.
+ * @param {boolean} [options.includeOptional=true] - Whether to include optional dependencies when gathering.
+ * @returns {void} A Promise that resolves on completion.
  */
-copier.execute = async (projectPath, targetPath, options = { includeOptional: true }) => {
+copier.execute = (projectPath, targetPath, options = { includeOptional: true }) => {
 	if (projectPath === null || projectPath === undefined) {
 		throw new Error('projectPath must be defined.');
 	}
@@ -27,18 +28,18 @@ copier.execute = async (projectPath, targetPath, options = { includeOptional: tr
 
 	// recursively gather the full set of dependencies/directories we need to copy
 	const root = new Dependency(null, 'fake-id', projectPath);
-	const directoriesToBeCopied = await root.getDirectoriesToCopy(options.includeOptional);
+	const directoriesToBeCopied = root.getDirectoriesToCopy(options.includeOptional);
 
 	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
 	// back to Array so we can #map()
 	const deDuplicated = Array.from(dirSet);
 
 	// Then copy them over
-	return Promise.all(deDuplicated.map(async directory => {
+	return deDuplicated.map(directory => {
 		const relativePath = directory.substring(projectPath.length);
 		const destPath = path.join(targetPath, relativePath);
-		return fs.copy(directory, destPath, { overwrite: true }); // TODO: Allow incremental copying! Maybe use gulp/vinyl?
-	}));
+		return fs.copySync(directory, destPath, { overwrite: true, dereference: true, filter: src => !src.split(path.sep).includes('__modules') }); // TODO: Allow incremental copying! Maybe use gulp/vinyl?
+	});
 };
 
 class Dependency {
@@ -49,18 +50,19 @@ class Dependency {
 	}
 
 	/**
-	 * @param {boolean} [includeOptional=true] include optional dependencies?
-	 * @returns {Promise<string[]>} full set of directories to copy
+	 * @description Get directories that need to be copied to target
+	 * @param {boolean} [includeOptional=true] - Include optional dependencies?
+	 * @returns {Promise<string[]>} Full set of directories to copy.
 	 */
-	async getDirectoriesToCopy(includeOptional = true) {
-		const childrenNames = await this.gatherChildren(includeOptional);
+	getDirectoriesToCopy(includeOptional = true) {
+		const childrenNames = this.gatherChildren(includeOptional);
 		if (childrenNames.length === 0) {
 			return [ this.directory ]; // just need our own directory!
 		}
 
-		const children = await Promise.all(childrenNames.map(name => this.resolve(name)));
-		const allDirs = await Promise.all(children.map(c => c.getDirectoriesToCopy(includeOptional)));
-		// flatten allDirs doen to single Array
+		const children = childrenNames.map(name => this.resolve(name));
+		const allDirs = children.map(child => child.getDirectoriesToCopy(includeOptional));
+		// flatten allDirs down to single Array
 		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
 
 		// if this isn't the "root" module...
@@ -74,11 +76,12 @@ class Dependency {
 	}
 
 	/**
-	 * @param {boolean} [includeOptional] include optional dependencies?
-	 * @returns {Promise<string[]>} set of dependency names
+	 * @description Gather a list of all child dependencies
+	 * @param {boolean} [includeOptional] - Include optional dependencies?
+	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
-	async gatherChildren(includeOptional = true) {
-		const packageJson = await fs.readJson(path.join(this.directory, 'package.json'));
+	gatherChildren(includeOptional = true) {
+		const packageJson = fs.readJsonSync(path.join(this.directory, 'package.json'));
 		const dependencies = Object.keys(packageJson.dependencies || {});
 		// include optional dependencies too?
 		if (includeOptional && packageJson.optionalDependencies) {
@@ -88,15 +91,15 @@ class Dependency {
 	}
 
 	/**
-	 * Attempts to resolve a given module by id to the correct
-	 * @param {string} subModule id of a module that is it's dependency
-	 * @returns {Promise<Dependency>} the resolved dependency
+	 * @description Attempts to resolve a given module by id to the correct.
+	 * @param {string} subModule - Id of a module that is it's dependency.
+	 * @returns {Promise<Dependency>} The resolved dependency.
 	 */
-	async resolve(subModule) {
+	resolve(subModule) {
 		try {
 			// First try underneath the current module
 			const targetDir = path.join(this.directory, NODE_MODULES, subModule);
-			const packageJsonExists = await fs.pathExists(path.join(targetDir, 'package.json'));
+			const packageJsonExists = fs.existsSync(path.join(targetDir, 'package.json'));
 			if (packageJsonExists) {
 				return new Dependency(this, subModule, targetDir);
 			}

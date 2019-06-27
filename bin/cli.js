@@ -6,9 +6,4 @@ if (args.length !== 2) {
 	process.exit(1);
 }
 
-require('../index').execute(...args)
-	.then(() => process.exit(0))
-	.catch(e => {
-		console.error(e);
-		process.exit(1);
-	});
+require('../index').execute(...args);
