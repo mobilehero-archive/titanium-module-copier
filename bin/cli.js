@@ -2,7 +2,7 @@
 
 const args = process.argv.slice(2);
 if (args.length !== 2) {
-	console.error('copy-modules requires 2 parameters: projectPath and targetPath');
+	console.error('copymodules requires 2 parameters: projectPath and targetPath');
 	process.exit(1);
 }
 
