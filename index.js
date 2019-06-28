@@ -48,7 +48,6 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true }) => {
 			filter:      src => copier.nativeModulePlatformPaths.every(item => !src.startsWith(item)),
 		});
 	});
-
 };
 
 class Dependency {
@@ -65,6 +64,9 @@ class Dependency {
 	 */
 	getDirectoriesToCopy(includeOptional = true) {
 		const childrenNames = this.gatherChildren(includeOptional);
+		if (!childrenNames) {
+			return []; // Ignore this directory
+		}
 		if (childrenNames.length === 0) {
 			return [ this.directory ]; // just need our own directory!
 		}
@@ -98,6 +100,10 @@ class Dependency {
 		}
 
 		if (packageJson.titanium) {
+			if (packageJson.titanium.ignore) {
+				return; // ignore this module
+			}
+
 			if (packageJson.titanium.type === 'native-module') {
 				copier.nativeModulePaths.push(this.directory);
 			}
@@ -107,9 +113,7 @@ class Dependency {
 				nativeModulePlatformPaths.push(path.join(this.directory, item));
 			});
 			copier.nativeModulePlatformPaths = copier.nativeModulePlatformPaths.concat(nativeModulePlatformPaths);
-
 		}
-
 
 		return dependencies;
 	}
