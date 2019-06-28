@@ -6,4 +6,12 @@ if (args.length !== 2) {
 	process.exit(1);
 }
 
-require('../index').execute(...args);
+const params = {
+	projectPath:     args[0],
+	targetPath:      args[1],
+	includeOptional: args.includes('--include-optional'),
+};
+
+require('../index').executeSync(params);
+
+

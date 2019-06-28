@@ -1,10 +1,14 @@
 const copier = {};
 module.exports = copier;
 
+copier.nativeModulePaths = [];
+copier.nativeModulePlatformPaths = [];
+
 const fs = require('fs-extra');
 const path = require('path');
 
 const NODE_MODULES = 'node_modules';
+const THE_ROOT_MODULE = 'THE_ROOT_MODULE';
 
 /**
  * @description Copy all dependencies to target directory
@@ -14,7 +18,7 @@ const NODE_MODULES = 'node_modules';
  * @param {boolean} [options.includeOptional=true] - Whether to include optional dependencies when gathering.
  * @returns {void} A Promise that resolves on completion.
  */
-copier.execute = (projectPath, targetPath, options = { includeOptional: true }) => {
+copier.executeSync = ({ projectPath, targetPath, includeOptional = true }) => {
 	if (projectPath === null || projectPath === undefined) {
 		throw new Error('projectPath must be defined.');
 	}
@@ -27,19 +31,24 @@ copier.execute = (projectPath, targetPath, options = { includeOptional: true }) 
 	targetPath = path.resolve(targetPath);
 
 	// recursively gather the full set of dependencies/directories we need to copy
-	const root = new Dependency(null, 'fake-id', projectPath);
-	const directoriesToBeCopied = root.getDirectoriesToCopy(options.includeOptional);
+	const root = new Dependency(null, THE_ROOT_MODULE, projectPath);
+	const directoriesToBeCopied = root.getDirectoriesToCopy(includeOptional);
 
 	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
 	// back to Array so we can #map()
 	const deDuplicated = Array.from(dirSet);
 
 	// Then copy them over
-	return deDuplicated.map(directory => {
+	deDuplicated.map(directory => {
 		const relativePath = directory.substring(projectPath.length);
 		const destPath = path.join(targetPath, relativePath);
-		return fs.copySync(directory, destPath, { overwrite: true, dereference: true, filter: src => !src.split(path.sep).includes('__modules') }); // TODO: Allow incremental copying! Maybe use gulp/vinyl?
+		return fs.copySync(directory, destPath, {
+			overwrite:   true,
+			dereference: true,
+			filter:      src => copier.nativeModulePlatformPaths.every(item => !src.startsWith(item)),
+		});
 	});
+
 };
 
 class Dependency {
@@ -87,6 +96,21 @@ class Dependency {
 		if (includeOptional && packageJson.optionalDependencies) {
 			dependencies.push(...Object.keys(packageJson.optionalDependencies));
 		}
+
+		if (packageJson.titanium) {
+			if (packageJson.titanium.type === 'native-module') {
+				copier.nativeModulePaths.push(this.directory);
+			}
+			const nativeModulePlatformPaths = [];
+			Array.isArray(packageJson.titanium.platform) || (packageJson.titanium.platform = packageJson.titanium.platform.split(','));
+			packageJson.titanium.platform.forEach(item => {
+				nativeModulePlatformPaths.push(path.join(this.directory, item));
+			});
+			copier.nativeModulePlatformPaths = copier.nativeModulePlatformPaths.concat(nativeModulePlatformPaths);
+
+		}
+
+
 		return dependencies;
 	}
 
