@@ -8,7 +8,7 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const NODE_MODULES = 'node_modules';
-const THE_ROOT_MODULE = 'THE_ROOT_MODULE';
+const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
 
 /**
  * @description Copy all dependencies to target directory
@@ -45,7 +45,8 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true }) => {
 		return fs.copySync(directory, destPath, {
 			overwrite:   true,
 			dereference: true,
-			filter:      src => copier.nativeModulePlatformPaths.every(item => !src.startsWith(item)),
+			// Make sure we are not copying unwanted dependencies or directories marked for skipping
+			filter:      src => !src.endsWith(NODE_MODULES) && copier.nativeModulePlatformPaths.every(item => !src.startsWith(item)),
 		});
 	});
 };
@@ -76,12 +77,8 @@ class Dependency {
 		// flatten allDirs down to single Array
 		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
 
-		// if this isn't the "root" module...
-		if (this.parent !== null) {
-			// ...prune any children directories that are underneath this one
-			const filtered = flattened.filter(dir => !dir.startsWith(this.directory + path.sep));
-			filtered.push(this.directory); // We need to include our own directory
-			return filtered;
+		if (this.name !== THE_ROOT_MODULE) {
+			flattened.push(this.directory); // We need to include our own directory
 		}
 		return flattened;
 	}
