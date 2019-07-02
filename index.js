@@ -68,8 +68,13 @@ class Dependency {
 		if (!childrenNames) {
 			return []; // Ignore this directory
 		}
+
 		if (childrenNames.length === 0) {
-			return [ this.directory ]; // just need our own directory!
+			if (this.name !== THE_ROOT_MODULE) {
+				return [ this.directory ]; // just need our own directory!
+			} else {
+				return [];
+			}
 		}
 
 		const children = childrenNames.map(name => this.resolve(name));
