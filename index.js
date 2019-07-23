@@ -18,7 +18,7 @@ const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
  * @param {boolean} [options.includeOptional=true] - Whether to include optional dependencies when gathering.
  * @returns {void} A Promise that resolves on completion.
  */
-copier.executeSync = ({ projectPath, targetPath, includeOptional = true }) => {
+copier.executeSync = ({ projectPath, targetPath, includeOptional = true, includePeers = true }) => {
 	if (projectPath === null || projectPath === undefined) {
 		throw new Error('projectPath must be defined.');
 	}
@@ -32,7 +32,7 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true }) => {
 
 	// recursively gather the full set of dependencies/directories we need to copy
 	const root = new Dependency(null, THE_ROOT_MODULE, projectPath);
-	const directoriesToBeCopied = root.getDirectoriesToCopy(includeOptional);
+	const directoriesToBeCopied = root.getDirectoriesToCopy(includeOptional, includePeers);
 
 	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
 	// back to Array so we can #map()
@@ -61,9 +61,10 @@ class Dependency {
 	/**
 	 * @description Get directories that need to be copied to target
 	 * @param {boolean} [includeOptional=true] - Include optional dependencies?
+	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
 	 */
-	getDirectoriesToCopy(includeOptional = true) {
+	getDirectoriesToCopy(includeOptional = true, includePeers = true) {
 		const childrenNames = this.gatherChildren(includeOptional);
 		if (!childrenNames) {
 			return []; // Ignore this directory
@@ -78,7 +79,7 @@ class Dependency {
 		}
 
 		const children = childrenNames.map(name => this.resolve(name));
-		const allDirs = children.map(child => child.getDirectoriesToCopy(includeOptional));
+		const allDirs = children.map(child => child.getDirectoriesToCopy(includeOptional, includePeers));
 		// flatten allDirs down to single Array
 		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
 
@@ -91,14 +92,19 @@ class Dependency {
 	/**
 	 * @description Gather a list of all child dependencies
 	 * @param {boolean} [includeOptional] - Include optional dependencies?
+	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
-	gatherChildren(includeOptional = true) {
+	gatherChildren(includeOptional = true, includePeers = true) {
 		const packageJson = fs.readJsonSync(path.join(this.directory, 'package.json'));
 		const dependencies = Object.keys(packageJson.dependencies || {});
 		// include optional dependencies too?
 		if (includeOptional && packageJson.optionalDependencies) {
 			dependencies.push(...Object.keys(packageJson.optionalDependencies));
+		}
+
+		if (includePeers && packageJson.peerDependencies) {
+			dependencies.push(...Object.keys(packageJson.peerDependencies));
 		}
 
 		if (packageJson.titanium) {
