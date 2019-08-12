@@ -118,6 +118,7 @@ class Dependency {
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'ios'));
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
 			}
+		}
 
 		return dependencies;
 	}
