@@ -114,14 +114,10 @@ class Dependency {
 
 			if (packageJson.titanium.type === 'native-module') {
 				copier.nativeModulePaths.push(this.directory);
+				// Just add ios and android if type: native-module
+				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'ios'));
+				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
 			}
-			const nativeModulePlatformPaths = [];
-			Array.isArray(packageJson.titanium.platform) || (packageJson.titanium.platform = packageJson.titanium.platform.split(','));
-			packageJson.titanium.platform.forEach(item => {
-				nativeModulePlatformPaths.push(path.join(this.directory, item));
-			});
-			copier.nativeModulePlatformPaths = copier.nativeModulePlatformPaths.concat(nativeModulePlatformPaths);
-		}
 
 		return dependencies;
 	}
