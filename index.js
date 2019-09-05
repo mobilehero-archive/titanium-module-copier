@@ -3,6 +3,7 @@ module.exports = copier;
 
 copier.nativeModulePaths = [];
 copier.nativeModulePlatformPaths = [];
+copier.excludedDirectories = [ '.git', '.svn' ];
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -46,7 +47,9 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true, include
 			overwrite:   true,
 			dereference: true,
 			// Make sure we are not copying unwanted dependencies or directories marked for skipping
-			filter:      src => !src.endsWith(NODE_MODULES) && copier.nativeModulePlatformPaths.every(item => !src.startsWith(item)),
+			filter:      src => !src.endsWith(NODE_MODULES)
+					&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
+					&& copier.excludedDirectories.every(item => !src.endsWith(item)),
 		});
 	});
 };
