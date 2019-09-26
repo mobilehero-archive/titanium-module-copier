@@ -8,6 +8,7 @@
 # @titanium/module-copier
 
 [![@titanium/module-copier](https://img.shields.io/npm/v/@titanium/module-copier.png)](https://www.npmjs.com/package/@titanium/module-copier)
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=brentonhouse/titanium-module-copier)](https://dependabot.com)
 
 > _**Turbo is not an official Axway product.**   
 > It is an experiment by [Brenton House](https://brenton.house) using open-source projects.  You are welcome to try it out but be aware of the risks_
