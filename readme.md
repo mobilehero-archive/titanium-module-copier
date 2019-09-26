@@ -1,17 +1,28 @@
+<a href="#titaniummodule-copier">
+	<p align="center">
+		<img src="https://cdn.secure-api.org/images/warning-sign-area51.png" width="80%" />
+		<img src="https://cdn.secure-api.org/images/border-line-3.png" width="70%" height="50" />
+	</p>
+</a>
+
 # @titanium/module-copier
 
-![https://www.npmjs.com/package/@titanium/module-copier](https://img.shields.io/npm/v/@titanium/module-copier.png)
+[![@titanium/module-copier](https://img.shields.io/npm/v/@titanium/module-copier.png)](https://www.npmjs.com/package/@titanium/module-copier)
 
-> Copies dependencies defined in package.json to Titanium Resources directory
+> _**Turbo is not an official Axway product.**   
+> It is an experiment by [Brenton House](https://brenton.house) using open-source projects.  You are welcome to try it out but be aware of the risks_
 
-- [📝 Description](#-description)
-- [🚀 Getting Started](#-getting-started)
-- [🔗 Related Links](#-related-links)
-- [📚 Learn More](#-learn-more)
-- [📣 Feedback](#-feedback)
-- [©️ Legal](#️-legal)
+
+* [📝 Description](#-description)
+* [🚀 Getting Started](#-getting-started)
+* [🔗 Related Links](#-related-links)
+* [📚 Learn More](#-learn-more)
+* [📣 Feedback](#-feedback)
+* [©️ Legal](#️-legal)
 
 ## 📝 Description
+
+This module copies dependencies defined in package.json to Titanium Resources directory.
 
 Currently, if you want to be able to use npm to install packages for Titanium, you need to do it from `/app/lib`, `/app/vendor`, or `/app/assets`.
 
@@ -24,20 +35,20 @@ What this module does is it gives the you (the developer) the ability to install
  
 There are several ways this module can be used by Titanium:
 
-- You can [follow this JIRA ticket](https://jira.appcelerator.org/browse/TIMOB-26352) about this feature getting integrated into Titanium SDK
-- You can use this a part of a Titanium Plugin
-- You can execute this as command-line tool:  `copymodules <projectPath> <targetPath>`
+- [x] You can [follow this JIRA ticket](https://jira.appcelerator.org/browse/TIMOB-26352) about this feature getting integrated into Titanium SDK
+- [x] You can use this a part of a Titanium Plugin
+- [x] You can execute this as command-line tool:  `copymodules <projectPath> <targetPath>`
 
 
 ## 🔗 Related Links
 
-- [Titanium Mobile](https://www.npmjs.com/package/titanium) - Open-source tool for building powerful, cross-platform native apps with JavaScript.
-- [Alloy](https://www.npmjs.com/package/alloy) - MVC framework built on top of Titanium Mobile.
-- [Appcelerator](https://www.npmjs.com/package/appcelerator) - Installer for the Appcelerator Platform tool
+⭐  [Titanium Mobile](https://www.npmjs.com/package/titanium) - Open-source tool for building powerful, cross-platform native apps with JavaScript.   
+⭐  [Alloy](https://www.npmjs.com/package/alloy) - MVC framework built on top of Titanium Mobile.   
+⭐  [Appcelerator](https://www.npmjs.com/package/appcelerator) - Installer for the Appcelerator Platform tool   
 
 ## 📚 Learn More
 
-- [Axway Developer Portal](https://developer.axway.com)
+⭐  [Axway Developer Portal](https://developer.axway.com)   
 
 ## 📣 Feedback
 

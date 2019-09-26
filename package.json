@@ -1,10 +1,11 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "0.0.14",
+	"version": "0.0.15",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"list-files": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
+		"test": "npm install --ignore-scripts && npm run list-files"
 	},
 	"author": {
 		"name": "Brenton House",
@@ -18,9 +19,9 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@geek/eslint-config": "0.0.8",
-		"eslint": "^6.1.0",
+		"eslint": "^6.4.0",
 		"eslint-plugin-import": "^2.18.2",
-		"eslint-plugin-jsdoc": "^7.2.3",
+		"eslint-plugin-jsdoc": "^15.9.3",
 		"eslint-plugin-promise": "^4.2.1"
 	},
 	"dependencies": {
