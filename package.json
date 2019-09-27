@@ -19,7 +19,7 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@geek/eslint-config": "0.0.9",
+		"@geek/eslint-config": "0.0.10",
 		"eslint": "^6.4.0",
 		"eslint-plugin-import": "^2.18.2",
 		"eslint-plugin-jsdoc": "^15.9.5",
