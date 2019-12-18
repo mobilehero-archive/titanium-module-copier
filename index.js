@@ -3,6 +3,7 @@ module.exports = copier;
 
 copier.nativeModulePaths = [];
 copier.widgetManifests = [];
+copier.widgetDirectories = [];
 copier.nativeModulePlatformPaths = [];
 copier.excludedDirectories = [ '.git', '.svn' ];
 
@@ -52,7 +53,8 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true, include
 				!src.endsWith(NODE_MODULES)
 				&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
 				&& copier.excludedDirectories.every(item => !src.endsWith(item))
-				&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
+				&& copier.excludedDirectories.every(item => !src.endsWith(item)),
+			// && copier.widgetManifests.every(item => !src.startsWith(item.dir)),
 		});
 	});
 
@@ -128,6 +130,7 @@ class Dependency {
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
 			} else if (packageJson.titanium.type === 'widget') {
 				const widgetDir = path.join(this.directory, packageJson.titanium.widgetDir || '.');
+				copier.widgetDirectories.push(widgetDir);
 				const widgetManifest = {
 					dir:      widgetDir,
 					manifest: {
