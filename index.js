@@ -48,10 +48,11 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true, include
 			overwrite:   true,
 			dereference: true,
 			// Make sure we are not copying unwanted dependencies or directories marked for skipping
-			filter:      src => !src.endsWith(NODE_MODULES)
-					&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
-					&& copier.excludedDirectories.every(item => !src.endsWith(item))
-					&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
+			filter:      src =>
+				!src.endsWith(NODE_MODULES)
+				&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
+				&& copier.excludedDirectories.every(item => !src.endsWith(item))
+				&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
 		});
 	});
 
@@ -126,8 +127,9 @@ class Dependency {
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'ios'));
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
 			} else if (packageJson.titanium.type === 'widget') {
+				const widgetDir = path.join(this.directory, packageJson.titanium.widgetDir || '.');
 				const widgetManifest = {
-					dir:      this.directory,
+					dir:      widgetDir,
 					manifest: {
 						id:        packageJson.titanium.widgetId,
 						platforms: packageJson.titanium.platforms,
