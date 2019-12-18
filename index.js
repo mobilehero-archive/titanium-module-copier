@@ -2,6 +2,7 @@ const copier = {};
 module.exports = copier;
 
 copier.nativeModulePaths = [];
+copier.widgetManifests = [];
 copier.nativeModulePlatformPaths = [];
 copier.excludedDirectories = [ '.git', '.svn' ];
 
@@ -12,7 +13,7 @@ const NODE_MODULES = 'node_modules';
 const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
 
 /**
- * @description Copy all dependencies to target directory
+ * @description Copy all dependencies to target directory.
  * @param {string} projectPath - Absolute filepath for project root directory.
  * @param {string} targetPath - Absolute filepath for target directory to copy node_modules into.
  * @param {object} [options] - Options object.
@@ -49,9 +50,13 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = true, include
 			// Make sure we are not copying unwanted dependencies or directories marked for skipping
 			filter:      src => !src.endsWith(NODE_MODULES)
 					&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
-					&& copier.excludedDirectories.every(item => !src.endsWith(item)),
+					&& copier.excludedDirectories.every(item => !src.endsWith(item))
+					&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
 		});
 	});
+
+	// console.debug(`this.widgetManifests: ${JSON.stringify(copier.widgetManifests, null, 2)}`);
+	fs.writeJsonSync(path.join(projectPath, 'build', 'widgets.json'), copier.widgetManifests, { spaces: '\t' });
 };
 
 class Dependency {
@@ -62,7 +67,7 @@ class Dependency {
 	}
 
 	/**
-	 * @description Get directories that need to be copied to target
+	 * @description Get directories that need to be copied to target.
 	 * @param {boolean} [includeOptional=true] - Include optional dependencies?
 	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
@@ -93,7 +98,7 @@ class Dependency {
 	}
 
 	/**
-	 * @description Gather a list of all child dependencies
+	 * @description Gather a list of all child dependencies.
 	 * @param {boolean} [includeOptional] - Include optional dependencies?
 	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
@@ -120,6 +125,15 @@ class Dependency {
 				// Just add ios and android if type: native-module
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'ios'));
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
+			} else if (packageJson.titanium.type === 'widget') {
+				const widgetManifest = {
+					dir:      this.directory,
+					manifest: {
+						id:        packageJson.titanium.widgetId,
+						platforms: packageJson.titanium.platforms,
+					},
+				};
+				copier.widgetManifests.push(widgetManifest);
 			}
 		}
 
