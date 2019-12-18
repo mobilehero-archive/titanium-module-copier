@@ -134,8 +134,8 @@ class Dependency {
 				const widgetManifest = {
 					dir:      widgetDir,
 					manifest: {
-						id:        packageJson.titanium.widgetId,
-						platforms: packageJson.titanium.platforms,
+						id:        packageJson.titanium.widgetId || packageJson.id,
+						platforms: packageJson.titanium.platforms || 'ios,android',
 					},
 				};
 				copier.widgetManifests.push(widgetManifest);
