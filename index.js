@@ -21,7 +21,7 @@ const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
  * @param {boolean} [options.includeOptional=true] - Whether to include optional dependencies when gathering.
  * @returns {void} A Promise that resolves on completion.
  */
-copier.executeSync = ({ projectPath, targetPath, includeOptional = true, includePeers = true }) => {
+copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includePeers = false }) => {
 	if (projectPath === null || projectPath === undefined) {
 		throw new Error('projectPath must be defined.');
 	}
@@ -106,7 +106,7 @@ class Dependency {
 	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
-	gatherChildren(includeOptional = true, includePeers = true) {
+	gatherChildren(includeOptional = false, includePeers = false) {
 		const packageJson = fs.readJsonSync(path.join(this.directory, 'package.json'));
 		const dependencies = Object.keys(packageJson.dependencies || {});
 		// include optional dependencies too?
