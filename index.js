@@ -75,7 +75,7 @@ class Dependency {
 	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
 	 */
-	getDirectoriesToCopy(includeOptional = true, includePeers = true) {
+	getDirectoriesToCopy(includeOptional = false, includePeers = false) {
 		const childrenNames = this.gatherChildren(includeOptional);
 		if (!childrenNames) {
 			return []; // Ignore this directory
