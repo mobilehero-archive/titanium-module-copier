@@ -53,8 +53,8 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 				!src.endsWith(NODE_MODULES)
 				&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
 				&& copier.excludedDirectories.every(item => !src.endsWith(item))
-				&& copier.excludedDirectories.every(item => !src.endsWith(item)),
-			// && copier.widgetManifests.every(item => !src.startsWith(item.dir)),
+				&& copier.excludedDirectories.every(item => !src.endsWith(item))
+				&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
 		});
 	});
 
