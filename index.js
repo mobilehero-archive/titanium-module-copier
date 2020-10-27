@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 const copier = {};
 module.exports = copier;
 
@@ -36,7 +37,7 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 	targetPath = path.resolve(targetPath);
 
 	// recursively gather the full set of dependencies/directories we need to copy
-	const root = new Dependency(null, THE_ROOT_MODULE, projectPath);
+	const root = new Dependency(null, THE_ROOT_MODULE, projectPath, projectPath);
 	const directoriesToBeCopied = root.getDirectoriesToCopy(includeOptional, includePeers);
 
 	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
@@ -55,7 +56,6 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 				!src.endsWith(NODE_MODULES)
 				&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
 				&& copier.excludedDirectories.every(item => !src.endsWith(item))
-				&& copier.excludedDirectories.every(item => !src.endsWith(item))
 				&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
 		});
 	});
@@ -66,10 +66,11 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 };
 
 class Dependency {
-	constructor(parent, name, directory) {
+	constructor(parent, name, directory, root) {
 		this.name = name;
 		this.parent = parent;
 		this.directory = directory;
+		this.root = root;
 	}
 
 	/**
@@ -116,34 +117,30 @@ class Dependency {
 			return; // ignore this module
 		}
 
-
-		let main;
-		if (packageJson.main) {
-			main = path.join(this.directory, packageJson.main);
-			if (!fs.existsSync(main)) {
-				main = path.join(this.directory, `${packageJson.main}.js`);
-				if (!fs.existsSync(main)) {
-					main = path.join(this.directory, `${packageJson.main}.json`);
-					if (!fs.existsSync(main)) {
-						main = path.join(this.directory, `index.js`);
-						if (!fs.existsSync(main)) {
-							main = path.join(this.directory, `index.json`);
-							// eslint-disable-next-line max-depth
-							if (!fs.existsSync(main)) {
-								main = null;
-							}
-						}
-					}
+		if (this.name !== THE_ROOT_MODULE) {
+			let main;
+			if (packageJson.main) {
+				if (fs.existsSync(path.join(this.directory, packageJson.main))) {
+					main = path.join(this.target, packageJson.main).substring(this.root.length);
+				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.js`))) {
+					main = path.join(this.target, `${packageJson.main}.js`).substring(this.root.length);
+				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.json`))) {
+					main = path.join(this.target, `${packageJson.main}.json`).substring(this.root.length);
+				} else if (fs.existsSync(path.join(this.directory, `index.js`))) {
+					main = path.join(this.target, `index.js`).substring(this.root.length);
+				} else if (fs.existsSync(path.join(this.directory, `index.json`))) {
+					main = path.join(this.target, `index.json`).substring(this.root.length);
 				}
 			}
-		}
 
-		copier.package_registry.push({
-			name:      packageJson.name,
-			version:   packageJson.version,
-			directory: this.directory,
-			main,
-		});
+			copier.package_registry.push({
+				name:      packageJson.name,
+				version:   packageJson.version,
+				directory: this.directory,
+				main,
+			});
+
+		}
 
 		const aliases = _.get(packageJson, `titanium.aliases`);
 		if (_.isObject(aliases)) {
@@ -204,10 +201,11 @@ class Dependency {
 	resolve(subModule) {
 		try {
 			// First try underneath the current module
-			const targetDir = path.join(this.directory, NODE_MODULES, subModule);
-			const packageJsonExists = fs.existsSync(path.join(targetDir, `package.json`));
+			const source_directory = path.join(this.directory, NODE_MODULES, subModule);
+			// const target_directory = path.join(this.target, NODE_MODULES, subModule);
+			const packageJsonExists = fs.existsSync(path.join(source_directory, `package.json`));
 			if (packageJsonExists) {
-				return new Dependency(this, subModule, targetDir);
+				return new Dependency(this, subModule, source_directory, this.root);
 			}
 		} catch (err) {
 			// this is the root and we still didn't find it, fail!
