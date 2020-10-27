@@ -147,7 +147,7 @@ class Dependency {
 			for (const alias in aliases) {
 				let main = aliases[alias];
 				if (!main.startsWith(`/`)) {
-					main = path.join(this.directory, main);
+					main = path.join(this.directory, main).substring(this.root.length);
 				}
 				copier.package_registry.push({
 					alias,
