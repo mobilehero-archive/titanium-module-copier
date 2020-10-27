@@ -62,7 +62,7 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 
 	// console.debug(`this.widgetManifests: ${JSON.stringify(copier.widgetManifests, null, 2)}`);
 	fs.writeJsonSync(path.join(projectPath, `build`, `widgets.json`), copier.widgetManifests, { spaces: `\t` });
-	fs.writeJsonSync(path.join(projectPath, `build`, `package_registry.json`), copier.package_registry, { spaces: `\t` });
+	fs.writeJsonSync(path.join(targetPath, `__package_registry.json`), copier.package_registry, { spaces: `\t` });
 };
 
 class Dependency {
