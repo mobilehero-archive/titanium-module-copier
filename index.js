@@ -121,15 +121,15 @@ class Dependency {
 			let main;
 			if (packageJson.main) {
 				if (fs.existsSync(path.join(this.directory, packageJson.main))) {
-					main = path.join(this.target, packageJson.main).substring(this.root.length);
+					main = path.join(this.directory, packageJson.main).substring(this.root.length);
 				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.js`))) {
-					main = path.join(this.target, `${packageJson.main}.js`).substring(this.root.length);
+					main = path.join(this.directory, `${packageJson.main}.js`).substring(this.root.length);
 				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.json`))) {
-					main = path.join(this.target, `${packageJson.main}.json`).substring(this.root.length);
+					main = path.join(this.directory, `${packageJson.main}.json`).substring(this.root.length);
 				} else if (fs.existsSync(path.join(this.directory, `index.js`))) {
-					main = path.join(this.target, `index.js`).substring(this.root.length);
+					main = path.join(this.directory, `index.js`).substring(this.root.length);
 				} else if (fs.existsSync(path.join(this.directory, `index.json`))) {
-					main = path.join(this.target, `index.json`).substring(this.root.length);
+					main = path.join(this.directory, `index.json`).substring(this.root.length);
 				}
 			}
 
