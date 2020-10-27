@@ -5,6 +5,7 @@ module.exports = copier;
 copier.nativeModulePaths = [];
 copier.widgetManifests = [];
 copier.widgetDirectories = [];
+copier.turboDirectories = [];
 copier.nativeModulePlatformPaths = [];
 copier.package_registry = [];
 copier.excludedDirectories = [ `.git`, `.svn` ];
@@ -12,6 +13,8 @@ copier.excludedDirectories = [ `.git`, `.svn` ];
 const fs = require(`fs-extra`);
 const path = require(`path`);
 const _ = require(`lodash`);
+
+const logger = console;
 
 const NODE_MODULES = `node_modules`;
 const THE_ROOT_MODULE = `__THE_ROOT_MODULE__`;
@@ -37,26 +40,60 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 	targetPath = path.resolve(targetPath);
 
 	// recursively gather the full set of dependencies/directories we need to copy
-	const root = new Dependency(null, THE_ROOT_MODULE, projectPath, projectPath);
+	const root = new Dependency({ name: THE_ROOT_MODULE, directory: projectPath, root: projectPath });
 	const directoriesToBeCopied = root.getDirectoriesToCopy(includeOptional, includePeers);
 
 	const dirSet = new Set(directoriesToBeCopied); // de-duplicate
 	// back to Array so we can #map()
 	const deDuplicated = Array.from(dirSet);
 
+	// logger.debug(`🦠  deDuplicated: ${JSON.stringify(deDuplicated, null, 2)}`);
+
+	logger.debug(`🦠  copier.turboDirectories: ${JSON.stringify(copier.turboDirectories, null, 2)}`);
+
 	// Then copy them over
 	deDuplicated.map(directory => {
-		const relativePath = directory.substring(projectPath.length);
+
+		let relativePath = directory.substring(projectPath.length);
+		let overwrite = true;
+		for (const dir of copier.turboDirectories) {
+			if (directory.startsWith(dir) &&  directory.startsWith(path.join(dir, `node_modules`))) {
+				relativePath = directory.substring(dir.length);
+				overwrite = false;
+				break;
+			}
+		}
+
+		// const relativePath = directory.substring(projectPath.length);
+		// logger.debug(`🦠  relativePath: ${JSON.stringify(relativePath, null, 2)}`);
 		const destPath = path.join(targetPath, relativePath);
+		// logger.debug(`🦠  destPath: ${JSON.stringify(destPath, null, 2)}`);
 		return fs.copySync(directory, destPath, {
-			overwrite:   true,
+			overwrite,
 			dereference: true,
 			// Make sure we are not copying unwanted dependencies or directories marked for skipping
-			filter:      src =>
-				!src.endsWith(NODE_MODULES)
+			// filter:      src =>
+			// 	!src.endsWith(NODE_MODULES)
+			// 	&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
+			// 	&& copier.excludedDirectories.every(item => !src.endsWith(item))
+			// 	&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
+			filter:      src => {
+
+				return !src.endsWith(NODE_MODULES)
 				&& copier.nativeModulePlatformPaths.every(item => !src.startsWith(item))
 				&& copier.excludedDirectories.every(item => !src.endsWith(item))
-				&& copier.widgetManifests.every(item => !src.startsWith(item.dir)),
+				&& copier.widgetManifests.every(item => !src.startsWith(item.dir))
+				&& copier.turboDirectories.every(dir => {
+					if (src !== dir && src.startsWith(dir)) {
+						return src.startsWith(path.join(dir, `turbo`))
+						|| src.startsWith(path.join(dir, `node_modules`))
+						|| src === path.join(dir, `package.json`);
+					} else {
+						return true;
+					}
+				});
+
+			},
 		});
 	});
 
@@ -66,7 +103,7 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 };
 
 class Dependency {
-	constructor(parent, name, directory, root) {
+	constructor({ parent, name, directory, root }) {
 		this.name = name;
 		this.parent = parent;
 		this.directory = directory;
@@ -79,26 +116,28 @@ class Dependency {
 	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
 	 */
-	getDirectoriesToCopy(includeOptional = false, includePeers = false) {
-		const childrenNames = this.gatherChildren(includeOptional);
-		if (!childrenNames) {
-			return []; // Ignore this directory
-		}
+	getDirectoriesToCopy({ includeOptional = false, includePeers = false }) {
+		// const childrenNames = this.gatherChildren({ includeOptional, includePeers });
+		const results = this.gatherChildren({ includeOptional, includePeers });
 
-		if (childrenNames.length === 0) {
-			if (this.name !== THE_ROOT_MODULE) {
-				return [ this.directory ]; // just need our own directory!
-			} else {
-				return [];
-			}
-		}
+		// if (!childrenNames) {
+		// 	return []; // Ignore this directory
+		// }
 
-		const children = childrenNames.map(name => this.resolve(name));
+		// if (results.dependencies.length === 0) {
+		// 	if (this.name !== THE_ROOT_MODULE) {
+		// 		return [ this.directory ]; // just need our own directory!
+		// 	} else {
+		// 		return [];
+		// 	}
+		// }
+
+		const children = results.dependencies.map(name => this.resolve(name));
 		const allDirs = children.map(child => child.getDirectoriesToCopy(includeOptional, includePeers));
 		// flatten allDirs down to single Array
 		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
 
-		if (this.name !== THE_ROOT_MODULE) {
+		if (results.includeParent && (this.name !== THE_ROOT_MODULE)) {
 			flattened.push(this.directory); // We need to include our own directory
 		}
 		return flattened;
@@ -110,14 +149,15 @@ class Dependency {
 	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
-	gatherChildren(includeOptional = false, includePeers = false) {
+	gatherChildren({ includeOptional = false, includePeers = false }) {
 		const packageJson = fs.readJsonSync(path.join(this.directory, `package.json`));
 
-		if (packageJson.titanium && packageJson.titanium.ignore) {
-			return; // ignore this module
-		}
+		const result = {};
 
-		if (this.name !== THE_ROOT_MODULE) {
+		result.includeParent = !_.get(packageJson, `titanium.ignore`, false);
+		const titaniumDependencies = _.get(packageJson, `titanium.dependencies`);
+
+		if (!result.includeParent && this.name !== THE_ROOT_MODULE) {
 			let main;
 			if (packageJson.main) {
 				if (fs.existsSync(path.join(this.directory, packageJson.main))) {
@@ -158,20 +198,29 @@ class Dependency {
 			}
 		}
 
+		const dependencies = [];
 
-		const dependencies = Object.keys(packageJson.dependencies || {});
-		// include optional dependencies too?
-		if (includeOptional && packageJson.optionalDependencies) {
-			dependencies.push(...Object.keys(packageJson.optionalDependencies));
+		if (titaniumDependencies) {
+			dependencies.push(...Object.keys(packageJson[titaniumDependencies] || {}));
+		} else {
+			dependencies.push(...Object.keys(packageJson.dependencies || {}));
+			// include optional dependencies too?
+			if (includeOptional && packageJson.optionalDependencies) {
+				dependencies.push(...Object.keys(packageJson.optionalDependencies));
+			}
+
+			if (includePeers && packageJson.peerDependencies) {
+				dependencies.push(...Object.keys(packageJson.peerDependencies));
+			}
 		}
 
-		if (includePeers && packageJson.peerDependencies) {
-			dependencies.push(...Object.keys(packageJson.peerDependencies));
-		}
 
 		if (packageJson.titanium) {
 
-			if (packageJson.titanium.type === `native-module`) {
+			// logger.debug(`🦠  packageJson.titanium.type: ${JSON.stringify(packageJson.titanium.type, null, 2)}`);
+			if (packageJson.titanium.type === `turbo`) {
+				copier.turboDirectories.push(this.directory);
+			} else	if (packageJson.titanium.type === `native-module`) {
 				copier.nativeModulePaths.push(this.directory);
 				// Just add ios and android if type: native-module
 				copier.nativeModulePlatformPaths.push(path.join(this.directory, `ios`));
@@ -189,8 +238,8 @@ class Dependency {
 				copier.widgetManifests.push(widgetManifest);
 			}
 		}
-
-		return dependencies;
+		result.dependencies = dependencies;
+		return result;
 	}
 
 	/**
@@ -205,7 +254,7 @@ class Dependency {
 			// const target_directory = path.join(this.target, NODE_MODULES, subModule);
 			const packageJsonExists = fs.existsSync(path.join(source_directory, `package.json`));
 			if (packageJsonExists) {
-				return new Dependency(this, subModule, source_directory, this.root);
+				return new Dependency({ parent: this, name: subModule, directory: source_directory, root: this.root });
 			}
 		} catch (err) {
 			// this is the root and we still didn't find it, fail!
