@@ -5,13 +5,15 @@ copier.nativeModulePaths = [];
 copier.widgetManifests = [];
 copier.widgetDirectories = [];
 copier.nativeModulePlatformPaths = [];
-copier.excludedDirectories = [ '.git', '.svn' ];
+copier.package_registry = [];
+copier.excludedDirectories = [ `.git`, `.svn` ];
 
-const fs = require('fs-extra');
-const path = require('path');
+const fs = require(`fs-extra`);
+const path = require(`path`);
+const _ = require(`lodash`);
 
-const NODE_MODULES = 'node_modules';
-const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
+const NODE_MODULES = `node_modules`;
+const THE_ROOT_MODULE = `__THE_ROOT_MODULE__`;
 
 /**
  * @description Copy all dependencies to target directory.
@@ -23,10 +25,10 @@ const THE_ROOT_MODULE = '__THE_ROOT_MODULE__';
  */
 copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includePeers = false }) => {
 	if (projectPath === null || projectPath === undefined) {
-		throw new Error('projectPath must be defined.');
+		throw new Error(`projectPath must be defined.`);
 	}
 	if (targetPath === null || targetPath === undefined) {
-		throw new Error('targetPath must be defined.');
+		throw new Error(`targetPath must be defined.`);
 	}
 
 	// resolve path names for file copying
@@ -59,7 +61,8 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 	});
 
 	// console.debug(`this.widgetManifests: ${JSON.stringify(copier.widgetManifests, null, 2)}`);
-	fs.writeJsonSync(path.join(projectPath, 'build', 'widgets.json'), copier.widgetManifests, { spaces: '\t' });
+	fs.writeJsonSync(path.join(projectPath, `build`, `widgets.json`), copier.widgetManifests, { spaces: `\t` });
+	fs.writeJsonSync(path.join(projectPath, `build`, `package_registry.json`), copier.package_registry, { spaces: `\t` });
 };
 
 class Dependency {
@@ -70,7 +73,7 @@ class Dependency {
 	}
 
 	/**
-	 * @description Get directories that need to be copied to target.
+	 * Get directories that need to be copied to target.
 	 * @param {boolean} [includeOptional=true] - Include optional dependencies?
 	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
@@ -101,13 +104,64 @@ class Dependency {
 	}
 
 	/**
-	 * @description Gather a list of all child dependencies.
+	 * Gather a list of all child dependencies.
 	 * @param {boolean} [includeOptional] - Include optional dependencies?
 	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
 	gatherChildren(includeOptional = false, includePeers = false) {
-		const packageJson = fs.readJsonSync(path.join(this.directory, 'package.json'));
+		const packageJson = fs.readJsonSync(path.join(this.directory, `package.json`));
+
+		if (packageJson.titanium && packageJson.titanium.ignore) {
+			return; // ignore this module
+		}
+
+
+		let main;
+		if (packageJson.main) {
+			main = path.join(this.directory, packageJson.main);
+			if (!fs.existsSync(main)) {
+				main = path.join(this.directory, `${packageJson.main}.js`);
+				if (!fs.existsSync(main)) {
+					main = path.join(this.directory, `${packageJson.main}.json`);
+					if (!fs.existsSync(main)) {
+						main = path.join(this.directory, `index.js`);
+						if (!fs.existsSync(main)) {
+							main = path.join(this.directory, `index.json`);
+							// eslint-disable-next-line max-depth
+							if (!fs.existsSync(main)) {
+								main = null;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		copier.package_registry.push({
+			name:      packageJson.name,
+			version:   packageJson.version,
+			directory: this.directory,
+			main,
+		});
+
+		const aliases = _.get(packageJson, `titanium.aliases`);
+		if (_.isObject(aliases)) {
+			for (const alias of aliases) {
+				let main = aliases[alias];
+				if (!main.startsWith(`/`)) {
+					main = path.join(this.directory, main);
+				}
+				copier.package_registry.push({
+					alias,
+					version:   packageJson.version,
+					directory: this.directory,
+					main,
+				});
+			}
+		}
+
+
 		const dependencies = Object.keys(packageJson.dependencies || {});
 		// include optional dependencies too?
 		if (includeOptional && packageJson.optionalDependencies) {
@@ -119,23 +173,20 @@ class Dependency {
 		}
 
 		if (packageJson.titanium) {
-			if (packageJson.titanium.ignore) {
-				return; // ignore this module
-			}
 
-			if (packageJson.titanium.type === 'native-module') {
+			if (packageJson.titanium.type === `native-module`) {
 				copier.nativeModulePaths.push(this.directory);
 				// Just add ios and android if type: native-module
-				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'ios'));
-				copier.nativeModulePlatformPaths.push(path.join(this.directory, 'android'));
-			} else if (packageJson.titanium.type === 'widget') {
-				const widgetDir = path.join(this.directory, packageJson.titanium.widgetDir || '.');
+				copier.nativeModulePlatformPaths.push(path.join(this.directory, `ios`));
+				copier.nativeModulePlatformPaths.push(path.join(this.directory, `android`));
+			} else if (packageJson.titanium.type === `widget`) {
+				const widgetDir = path.join(this.directory, packageJson.titanium.widgetDir || `.`);
 				copier.widgetDirectories.push(widgetDir);
 				const widgetManifest = {
 					dir:      widgetDir,
 					manifest: {
 						id:        packageJson.titanium.widgetId || packageJson.id,
-						platforms: packageJson.titanium.platforms || 'ios,android',
+						platforms: packageJson.titanium.platforms || `ios,android`,
 					},
 				};
 				copier.widgetManifests.push(widgetManifest);
@@ -146,7 +197,7 @@ class Dependency {
 	}
 
 	/**
-	 * @description Attempts to resolve a given module by id to the correct.
+	 * Attempts to resolve a given module by id to the correct.
 	 * @param {string} subModule - Id of a module that is it's dependency.
 	 * @returns {Promise<Dependency>} The resolved dependency.
 	 */
@@ -154,7 +205,7 @@ class Dependency {
 		try {
 			// First try underneath the current module
 			const targetDir = path.join(this.directory, NODE_MODULES, subModule);
-			const packageJsonExists = fs.existsSync(path.join(targetDir, 'package.json'));
+			const packageJsonExists = fs.existsSync(path.join(targetDir, `package.json`));
 			if (packageJsonExists) {
 				return new Dependency(this, subModule, targetDir);
 			}

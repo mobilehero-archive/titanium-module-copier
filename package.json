@@ -5,8 +5,10 @@
 	"main": "index.js",
 	"scripts": {
 		"list": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
-		"test": "npm install --ignore-scripts && npm run list",
-		"prepublishOnly": "git pull && bump"
+		"prep": "npm install --ignore-scripts && npm run list",
+		"prepublishOnly": "git pull && bump release",
+		"test": "npm run prep",
+		"lint": "eslint . --fix"
 	},
 	"author": {
 		"name": "Brenton House",
@@ -19,14 +21,15 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@geek/eslint-config": "0.0.10",
-		"eslint": "^7.1.0",
-		"eslint-plugin-import": "^2.20.2",
-		"eslint-plugin-jsdoc": "^26.0.1",
+		"@geek/eslint-config": "0.0.17",
+		"eslint": "^7.12.1",
+		"eslint-plugin-import": "^2.22.1",
+		"eslint-plugin-jsdoc": "^30.7.3",
 		"eslint-plugin-promise": "^4.2.1"
 	},
 	"dependencies": {
-		"fs-extra": "^8.1.0"
+		"fs-extra": "^9.0.1",
+		"lodash": "^4.17.20"
 	},
 	"bin": {
 		"copymodules": "./bin/cli.js"
