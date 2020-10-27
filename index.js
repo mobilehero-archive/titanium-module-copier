@@ -144,7 +144,7 @@ class Dependency {
 
 		const aliases = _.get(packageJson, `titanium.aliases`);
 		if (_.isObject(aliases)) {
-			for (const alias of aliases) {
+			for (const alias in aliases) {
 				let main = aliases[alias];
 				if (!main.startsWith(`/`)) {
 					main = path.join(this.directory, main);
