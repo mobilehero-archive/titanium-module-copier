@@ -173,7 +173,12 @@ class Dependency {
 
 		logger.debug(`🦠  package: ${JSON.stringify(this.directory, null, 2)}`);
 
+		if (!this.directory.startsWith(parentRoot)) {
+			parentRoot = this.root;
+		}
+
 		// logger.debug(`🦠  parentRoot: ${JSON.stringify(parentRoot, null, 2)}`);
+
 
 		if (result.includeParent && (this.name !== THE_ROOT_MODULE)) {
 			let main;
@@ -260,6 +265,7 @@ class Dependency {
 			}
 		}
 		result.dependencies = dependencies;
+		// logger.debug(`🦠  copier.package_registry: ${JSON.stringify(copier.package_registry, null, 2)}`);
 		// logger.debug(`🦠  result: ${JSON.stringify(result, null, 2)}`);
 		return result;
 	}
