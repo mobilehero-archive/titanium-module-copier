@@ -249,7 +249,8 @@ class Dependency {
 				copier.package_registry.push({
 					alias,
 					version:   packageJson.version,
-					directory: this.directory,
+					// directory: this.directory,
+					directory: this.directory.substring(parentRoot.length),
 					main,
 				});
 			}
