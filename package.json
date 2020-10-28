@@ -6,7 +6,7 @@
 	"scripts": {
 		"list": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
 		"prep": "npm install --ignore-scripts && npm run list",
-		"prepublishOnly": "git pull && bump release-tag",
+		"prepublishOnly": "git pull && bump release",
 		"test": "npm run prep",
 		"lint": "eslint . --fix"
 	},
