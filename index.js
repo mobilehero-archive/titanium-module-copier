@@ -182,19 +182,26 @@ class Dependency {
 
 		if (result.includeParent && (this.name !== THE_ROOT_MODULE)) {
 			let main;
+			let main_file;
 			// const base_dir = (module_type === `turbo`) ? this.directory : this.root;
 
 			if (packageJson.main) {
-				if (fs.existsSync(path.join(this.directory, packageJson.main))) {
-					main = path.join(this.directory, packageJson.main).substring(parentRoot.length);
-				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.js`))) {
-					main = path.join(this.directory, `${packageJson.main}.js`).substring(parentRoot.length);
-				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.json`))) {
-					main = path.join(this.directory, `${packageJson.main}.json`).substring(parentRoot.length);
-				} else if (fs.existsSync(path.join(this.directory, `index.js`))) {
-					main = path.join(this.directory, `index.js`).substring(parentRoot.length);
-				} else if (fs.existsSync(path.join(this.directory, `index.json`))) {
-					main = path.join(this.directory, `index.json`).substring(parentRoot.length);
+
+				// logger.debug(`🦠  packageJson.main: ${JSON.stringify(packageJson.main, null, 2)}`);
+				if (main_file = path.join(this.directory, packageJson.main) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, `${packageJson.main}.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, `${packageJson.main}.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, packageJson.main, `index.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, packageJson.main, `index.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, `index.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
+				} else if (main_file = path.join(this.directory, `index.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+					main = path.join(main_file).substring(parentRoot.length);
 				}
 			}
 
