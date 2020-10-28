@@ -291,7 +291,7 @@ class Dependency {
 			}
 		}
 
-		if (this.parent === null) {
+		if (_.isNil(this.parent)) {
 			throw new Error(`Could not find dependency: ${subModule}`);
 		}
 		return this.parent.resolve(subModule); // Try the parent (recursively)
