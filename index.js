@@ -171,7 +171,7 @@ class Dependency {
 
 		const titaniumDependencies = _.get(packageJson, `titanium.dependencies`);
 
-		logger.debug(`🦠  this.directory: ${JSON.stringify(this.directory, null, 2)}`);
+		logger.debug(`🦠  package: ${JSON.stringify(this.directory, null, 2)}`);
 
 		// logger.debug(`🦠  parentRoot: ${JSON.stringify(parentRoot, null, 2)}`);
 
@@ -260,7 +260,7 @@ class Dependency {
 			}
 		}
 		result.dependencies = dependencies;
-		logger.debug(`🦠  result: ${JSON.stringify(result, null, 2)}`);
+		// logger.debug(`🦠  result: ${JSON.stringify(result, null, 2)}`);
 		return result;
 	}
 
