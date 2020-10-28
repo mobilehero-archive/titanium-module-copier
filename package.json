@@ -1,12 +1,12 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "0.0.37",
+	"version": "1.0.0",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {
 		"list": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
 		"prep": "npm install --ignore-scripts && npm run list",
-		"prepublishOnly": "git pull && bump release",
+		"prepublishOnly": "git pull && bump release-tag",
 		"test": "npm run prep",
 		"lint": "eslint . --fix"
 	},
