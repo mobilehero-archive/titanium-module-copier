@@ -1,6 +1,6 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {

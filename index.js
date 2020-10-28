@@ -220,16 +220,21 @@ class Dependency {
 
 		// logger.debug(`🦠  parentRoot: ${JSON.stringify(parentRoot, null, 2)}`);
 
-
 		if (result.includeParent && (this.name !== THE_ROOT_MODULE)) {
-			const main = findMain({ directory: this.directory, main: packageJson.main, root: parentRoot });
 
-			copier.package_registry.push({
-				name:      packageJson.name,
-				version:   packageJson.version,
-				directory: this.directory,
-				main,
-			});
+			if (!_.find(copier.package_registry, { name: packageJson.name })) {
+
+				const main = findMain({ directory: this.directory, main: packageJson.main, root: parentRoot });
+
+				copier.package_registry.push({
+					name:      packageJson.name,
+					version:   packageJson.version,
+					// directory: this.directory,
+					directory: this.directory.substring(parentRoot.length),
+					main,
+				});
+			}
+
 
 		}
 
