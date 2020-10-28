@@ -105,6 +105,47 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 	fs.writeJsonSync(path.join(targetPath, `__package_registry.json`), copier.package_registry, { spaces: `\t` });
 };
 
+
+const findMain = ({ directory, main, root }) => {
+
+	if (! main) {
+		return;
+	}
+
+	root = root || directory;
+
+	let main_file;
+	let result;
+
+	// logger.debug(`🦠  directory: ${JSON.stringify(directory, null, 2)}`);
+	// logger.debug(`🦠  main: ${JSON.stringify(main, null, 2)}`);
+	// logger.debug(`🦠  root: ${JSON.stringify(root, null, 2)}`);
+
+	main_file = path.join(directory, main);
+	// logger.debug(`🦠  main_file: ${JSON.stringify(main_file, null, 2)}`);
+
+	if ((main_file = path.join(directory, main)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if ((main_file = path.join(directory, `${main}.js`)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if ((main_file = path.join(directory, `${main}.json`)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if ((main_file = path.join(directory, main, `index.js`)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if (main_file = path.join(directory, main, `index.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if ((main_file = path.join(directory, `index.js`)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	} else if ((main_file = path.join(directory, `index.json`)) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
+		result = main_file.substring(root.length);
+	}
+
+	// logger.debug(`🦠  result: ${JSON.stringify(result, null, 2)}`);
+
+	return result;
+};
+
+
 class Dependency {
 	constructor({ parent, name, directory, root }) {
 		this.name = name;
@@ -181,29 +222,7 @@ class Dependency {
 
 
 		if (result.includeParent && (this.name !== THE_ROOT_MODULE)) {
-			let main;
-			let main_file;
-			// const base_dir = (module_type === `turbo`) ? this.directory : this.root;
-
-			if (packageJson.main) {
-
-				// logger.debug(`🦠  packageJson.main: ${JSON.stringify(packageJson.main, null, 2)}`);
-				if (main_file = path.join(this.directory, packageJson.main) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, `${packageJson.main}.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, `${packageJson.main}.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, packageJson.main, `index.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, packageJson.main, `index.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, `index.js`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				} else if (main_file = path.join(this.directory, `index.json`) && fs.existsSync(main_file) && fs.lstatSync(main_file).isFile()) {
-					main = path.join(main_file).substring(parentRoot.length);
-				}
-			}
+			const main = findMain({ directory: this.directory, main: packageJson.main, root: parentRoot });
 
 			copier.package_registry.push({
 				name:      packageJson.name,
@@ -219,7 +238,8 @@ class Dependency {
 			for (const alias in aliases) {
 				let main = aliases[alias];
 				if (!main.startsWith(`/`)) {
-					main = path.join(this.directory, main).substring(this.root.length);
+					// main = path.join(this.directory, main).substring(this.root.length);
+					main = findMain({ directory: this.directory, main, root: parentRoot });
 				}
 				copier.package_registry.push({
 					alias,
