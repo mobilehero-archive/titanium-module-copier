@@ -49,7 +49,7 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 
 	// logger.debug(`🦠  deDuplicated: ${JSON.stringify(deDuplicated, null, 2)}`);
 
-	logger.debug(`🦠  copier.turboDirectories: ${JSON.stringify(copier.turboDirectories, null, 2)}`);
+	// logger.debug(`🦠  copier.turboDirectories: ${JSON.stringify(copier.turboDirectories, null, 2)}`);
 
 	// Then copy them over
 	deDuplicated.map(directory => {
@@ -98,6 +98,9 @@ copier.executeSync = ({ projectPath, targetPath, includeOptional = false, includ
 	});
 
 	// console.debug(`this.widgetManifests: ${JSON.stringify(copier.widgetManifests, null, 2)}`);
+
+	copier.package_registry = _.sortBy(copier.package_registry, [ `name`, `alias` ]);
+
 	fs.writeJsonSync(path.join(projectPath, `build`, `widgets.json`), copier.widgetManifests, { spaces: `\t` });
 	fs.writeJsonSync(path.join(targetPath, `__package_registry.json`), copier.package_registry, { spaces: `\t` });
 };
@@ -116,9 +119,9 @@ class Dependency {
 	 * @param {boolean} [includePeers=true] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Full set of directories to copy.
 	 */
-	getDirectoriesToCopy({ includeOptional = false, includePeers = false }) {
+	getDirectoriesToCopy({ includeOptional = false, includePeers = false, parentRoot }) {
 		// const childrenNames = this.gatherChildren({ includeOptional, includePeers });
-		const results = this.gatherChildren({ includeOptional, includePeers });
+		const results = this.gatherChildren({ includeOptional, includePeers, parentRoot });
 
 		// if (!childrenNames) {
 		// 	return []; // Ignore this directory
@@ -133,7 +136,7 @@ class Dependency {
 		// }
 
 		const children = results.dependencies.map(name => this.resolve(name));
-		const allDirs = children.map(child => child.getDirectoriesToCopy(includeOptional, includePeers));
+		const allDirs = children.map(child => child.getDirectoriesToCopy({ includeOptional, includePeers, parentRoot: results.parentRoot }));
 		// flatten allDirs down to single Array
 		const flattened = allDirs.reduce((acc, val) => acc.concat(val), []); // TODO: replace with flat() call once Node 11+
 
@@ -149,27 +152,38 @@ class Dependency {
 	 * @param {boolean} [includePeers] - Include peer dependencies?
 	 * @returns {Promise<string[]>} Set of dependency names.
 	 */
-	gatherChildren({ includeOptional = false, includePeers = false }) {
+	gatherChildren({ includeOptional = false, includePeers = false, parentRoot = this.root }) {
 		const packageJson = fs.readJsonSync(path.join(this.directory, `package.json`));
 
-		const result = {};
 
-		result.includeParent = !_.get(packageJson, `titanium.ignore`, false);
+		const result = {
+			parentRoot,
+			includeParent: !_.get(packageJson, `titanium.ignore`, false),
+		};
+
+		const module_type = !_.get(packageJson, `titanium.type`, `package`);
+
 		const titaniumDependencies = _.get(packageJson, `titanium.dependencies`);
 
-		if (!result.includeParent && this.name !== THE_ROOT_MODULE) {
+		// logger.debug(`🦠  this.directory: ${JSON.stringify(this.directory, null, 2)}`);
+
+		// logger.debug(`🦠  parentRoot: ${JSON.stringify(parentRoot, null, 2)}`);
+
+		if (result.includeParent && (this.name !== THE_ROOT_MODULE)) {
 			let main;
+			// const base_dir = (module_type === `turbo`) ? this.directory : this.root;
+
 			if (packageJson.main) {
 				if (fs.existsSync(path.join(this.directory, packageJson.main))) {
-					main = path.join(this.directory, packageJson.main).substring(this.root.length);
+					main = path.join(this.directory, packageJson.main).substring(parentRoot.length);
 				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.js`))) {
-					main = path.join(this.directory, `${packageJson.main}.js`).substring(this.root.length);
+					main = path.join(this.directory, `${packageJson.main}.js`).substring(parentRoot.length);
 				} else if (fs.existsSync(path.join(this.directory, `${packageJson.main}.json`))) {
-					main = path.join(this.directory, `${packageJson.main}.json`).substring(this.root.length);
+					main = path.join(this.directory, `${packageJson.main}.json`).substring(parentRoot.length);
 				} else if (fs.existsSync(path.join(this.directory, `index.js`))) {
-					main = path.join(this.directory, `index.js`).substring(this.root.length);
+					main = path.join(this.directory, `index.js`).substring(parentRoot.length);
 				} else if (fs.existsSync(path.join(this.directory, `index.json`))) {
-					main = path.join(this.directory, `index.json`).substring(this.root.length);
+					main = path.join(this.directory, `index.json`).substring(parentRoot.length);
 				}
 			}
 
@@ -202,6 +216,7 @@ class Dependency {
 
 		if (titaniumDependencies) {
 			dependencies.push(...Object.keys(packageJson[titaniumDependencies] || {}));
+			result.parentRoot = this.directory;
 		} else {
 			dependencies.push(...Object.keys(packageJson.dependencies || {}));
 			// include optional dependencies too?
@@ -239,6 +254,7 @@ class Dependency {
 			}
 		}
 		result.dependencies = dependencies;
+		// logger.debug(`🦠  result: ${JSON.stringify(result, null, 2)}`);
 		return result;
 	}
 
