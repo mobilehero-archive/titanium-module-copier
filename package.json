@@ -28,7 +28,7 @@
 		"eslint-plugin-promise": "^4.2.1"
 	},
 	"dependencies": {
-		"fs-extra": "^9.0.1",
+		"fs-extra": "^10.0.0",
 		"lodash": "^4.17.20",
 		"make-synchronous": "^0.1.1"
 	},
