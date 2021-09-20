@@ -30,7 +30,7 @@
 	"dependencies": {
 		"fs-extra": "^9.0.1",
 		"lodash": "^4.17.20",
-		"make-synchronous": "^0.1.1"
+		"make-synchronous": "^1.0.0"
 	},
 	"bin": {
 		"copymodules": "./bin/cli.js"
