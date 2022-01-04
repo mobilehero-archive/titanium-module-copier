@@ -1,12 +1,12 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
 	"main": "index.js",
 	"scripts": {
 		"list": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
 		"prep": "npm install --ignore-scripts && npm run list",
-		"prepublishOnly": "git pull && bump release",
+		"prepublishOnly2": "git pull && bump release",
 		"test": "npm run prep",
 		"lint": "eslint . --fix"
 	},
@@ -48,6 +48,9 @@
 		"iphone",
 		"ipad",
 		"modules",
+		"axway-amplify",
+		"amplify",
+		"api-builder",
 		"brenton-house"
 	],
 	"titanium": {
