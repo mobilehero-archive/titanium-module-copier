@@ -1,14 +1,15 @@
 {
 	"name": "@titanium/module-copier",
-	"version": "1.0.12",
-	"description": "Copies dependencies defined in package.json to Titanium Resources directory",
+	"version": "1.0.13",
+	"description": "⭐  Axway Amplify module for copying dependencies to Appcelerator Titanium Resources SDK",
 	"main": "index.js",
 	"scripts": {
 		"list": "npm pack && tar -xvzf *.tgz && rm -rf package *.tgz",
+		"lint": "eslint . --fix",
 		"prep": "npm install --ignore-scripts && npm run list",
-		"prepublishOnly2": "git pull && bump release",
-		"test": "npm run prep",
-		"lint": "eslint . --fix"
+		"test": "npm install --ignore-scripts && npm run prep",
+		"prepublishOnly2": "git pull && npm test && bump insane",
+		"prepublishOnly": "git pull && npm test && npm audit fix && bump insane"
 	},
 	"author": {
 		"name": "Brenton House",
@@ -21,16 +22,16 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@geek/eslint-config": "0.0.17",
-		"eslint": "^7.12.1",
-		"eslint-plugin-import": "^2.22.1",
-		"eslint-plugin-jsdoc": "^30.7.3",
-		"eslint-plugin-promise": "^4.2.1"
+		"@geek/eslint-config": "1.0.3",
+		"eslint": "^8.6.0",
+		"eslint-plugin-import": "^2.25.4",
+		"eslint-plugin-jsdoc": "^37.5.1",
+		"eslint-plugin-promise": "^6.0.0"
 	},
 	"dependencies": {
-		"fs-extra": "^9.0.1",
-		"lodash": "^4.17.20",
-		"make-synchronous": "^0.1.1"
+		"fs-extra": "^10.0.0",
+		"lodash": "^4.17.21",
+		"make-synchronous": "^1.0.0"
 	},
 	"bin": {
 		"copymodules": "./bin/cli.js"
@@ -49,9 +50,16 @@
 		"iphone",
 		"ipad",
 		"modules",
-		"axway-amplify",
+		"sdk",
+		"plugin",
 		"amplify",
 		"api-builder",
+		"appcelerator-titanium",
+		"titanium-sdk",
+		"titanium-mobile",
+		"titanium-module",
+		"axway-sdk",
+		"axway-amplify",
 		"brenton-house"
 	],
 	"titanium": {
